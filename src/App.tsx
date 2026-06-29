@@ -4,6 +4,7 @@ import { ProjectDetail } from './components/ProjectDetail';
 import { EmptyState } from './components/EmptyState';
 import { AddProjectDialog } from './components/AddProjectDialog';
 import { EditProjectDialog } from './components/EditProjectDialog';
+import { Toast } from './components/Toast';
 import { useAppStore } from './store/useAppStore';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
     updateProject,
     deleteProject,
     openKimi,
+    clearError,
   } = useAppStore();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -31,14 +33,6 @@ function App() {
     return (
       <div className="flex h-screen items-center justify-center bg-neutral-950 text-neutral-400">
         Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-neutral-950 text-red-400">
-        Error: {error}
       </div>
     );
   }
@@ -96,6 +90,7 @@ function App() {
         onClose={() => setIsEditOpen(false)}
         onSave={updateProject}
       />
+      {error && <Toast message={error} onClose={clearError} />}
     </div>
   );
 }
