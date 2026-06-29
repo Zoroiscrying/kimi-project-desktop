@@ -29,6 +29,7 @@ pub fn app_state_path(app_handle: &tauri::AppHandle) -> PathBuf {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             let path = app_state_path(app.app_handle());
             let initial = load_or_create(&path).map_err(|e| e.to_string())?;
