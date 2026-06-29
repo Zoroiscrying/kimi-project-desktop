@@ -12,7 +12,7 @@ pub fn open_kimi_in_terminal(project_path: &str) -> Result<(), String> {
 
     #[cfg(target_os = "windows")]
     {
-        let ps_command = format!("cd \"{}\"; kim", canonical_str);
+        let ps_command = format!("cd \"{}\"; kimi", canonical_str);
         Command::new("powershell.exe")
             .args(["-NoExit", "-Command", &ps_command])
             .spawn()
@@ -35,7 +35,7 @@ pub fn open_kimi_in_terminal(project_path: &str) -> Result<(), String> {
 
     #[cfg(target_os = "linux")]
     {
-        let script = format!("cd \"{}\" && kim", canonical_str);
+        let script = format!("cd \"{}\" && kimi", canonical_str);
         Command::new("x-terminal-emulator")
             .args(["-e", "bash", "-c", &script])
             .spawn()
