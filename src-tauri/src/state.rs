@@ -86,7 +86,7 @@ pub fn load_or_create<P: AsRef<Path>>(path: P) -> Result<AppState, String> {
                 std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
                     .unwrap_or_default()
-                    .as_secs()
+                    .as_nanos()
             );
             let backup_path = path.with_file_name(&backup_name);
             fs::copy(path, backup_path).map_err(|err| format!("backup failed: {err}"))?;
@@ -123,9 +123,11 @@ mod tests {
         assert!(!path.exists());
 
         let state = load_or_create(&path).unwrap();
-        assert_eq!(state.version, 1);
-        assert!(state.projects.is_empty());
+        assert_eq!(state, AppState::default());
         assert!(path.exists());
+
+        let loaded = load_or_create(&path).unwrap();
+        assert_eq!(loaded, AppState::default());
     }
 
     #[test]
@@ -146,8 +148,7 @@ mod tests {
 
         save_state(&path, &state).unwrap();
         let loaded = load_or_create(&path).unwrap();
-        assert_eq!(loaded.projects.len(), 1);
-        assert_eq!(loaded.projects[0].name, "demo");
+        assert_eq!(loaded, state);
     }
 
     #[test]
@@ -157,7 +158,7 @@ mod tests {
         fs::write(&path, "not json").unwrap();
 
         let state = load_or_create(&path).unwrap();
-        assert_eq!(state.version, 1);
+        assert_eq!(state, AppState::default());
 
         let backups: Vec<_> = fs::read_dir(dir.path())
             .unwrap()
@@ -166,5 +167,8 @@ mod tests {
             .filter(|n| n.starts_with("state.json.bak"))
             .collect();
         assert_eq!(backups.len(), 1);
+
+        let loaded = load_or_create(&path).unwrap();
+        assert_eq!(loaded, AppState::default());
     }
 }
