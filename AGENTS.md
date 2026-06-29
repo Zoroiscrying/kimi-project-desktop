@@ -1,54 +1,77 @@
-# Agent Notes for Kimi Project Desktop
+# Agent Notes: Kimi Project Desktop
 
-## Development Environment
+## Project Overview
 
-This is a Tauri v2 + React + TypeScript desktop application.
+Tauri v2 + React 18 + TypeScript + Tailwind CSS + Zustand desktop app for managing Kimi Code CLI projects.
 
-### Windows GNU Toolchain Quirks
+## Repository Layout
 
-The Windows environment uses the GNU Rust toolchain (`x86_64-pc-windows-gnu`). Building Tauri v2 with this toolchain requires a working MinGW `windres` resource compiler. The system `PATH` may contain a broken `windres.exe` (for example, from a Chocolatey Processing package) that fails with:
+- `src/` — React frontend
+- `src-tauri/src/` — Rust backend
+- `src-tauri/src/state.rs` — JSON persistence
+- `src-tauri/src/commands.rs` — Tauri IPC commands (gated behind `tauri` feature)
+- `src-tauri/src/terminal.rs` — External terminal launch helpers
+- `tests/` — Vitest component tests
 
-```
+## Build Requirements
+
+- Rust toolchain: `x86_64-pc-windows-gnu` (this workspace)
+- Node.js + npm
+- MinGW `windres` from Strawberry Perl: `C:/Strawberry/c/bin/windres.exe`
+
+### Important: PATH for Windows GNU builds
+
+The Windows GNU linker can pick up the wrong `windres` from Chocolatey/Processing and fail with:
+
+```text
 windres.exe: Can't detect target endianness and architecture.
 ```
 
-To build successfully, prepend the Strawberry Perl MinGW `windres` directory to `PATH`:
+Always prepend the Strawberry Perl MinGW bin directory when running Tauri builds:
 
 ```bash
-export PATH="/c/Strawberry/c/bin:$PATH"
-export PATH="/c/Users/zoroiscrying/.cargo/bin:$PATH"
-cargo build --features tauri
+PATH="/c/Strawberry/c/bin:$HOME/.cargo/bin:$PATH" npm run tauri:build
+PATH="/c/Strawberry/c/bin:$HOME/.cargo/bin:$PATH" npm run tauri:dev
 ```
 
-### Crate Type
-
-Because the MinGW linker fails with "export ordinal too large" when building Tauri v2 as `cdylib`/`staticlib`, `src-tauri/Cargo.toml` uses `crate-type = ["rlib"]`. This is sufficient for the desktop target since `main.rs` links the library directly. Mobile bundling is not supported in this configuration.
-
-### Tauri Feature Gate
-
-Because `cargo test` binaries on Windows GNU fail to start when linking the Tauri runtime (`STATUS_ENTRYPOINT_NOT_FOUND`), Tauri (`tauri` and `tauri-build`) is an optional Cargo feature disabled by default.
-
-- Run tests: `cargo test`
-- Build/run the desktop app: `cargo build --features tauri` / `cargo run --features tauri`
-- Use Tauri CLI: `npm run tauri:dev` / `npm run tauri:build` (already pass `--features tauri`)
-
-All Tauri-specific code in the Rust crate is gated with `#[cfg(feature = "tauri")]`.
-
-### Useful Commands
+`cargo test` only needs Rust on PATH:
 
 ```bash
-# Install dependencies
-npm install
+PATH="$HOME/.cargo/bin:$PATH" cargo test
+```
 
-# Run Rust tests
-cd src-tauri && cargo test
+## Cargo Features
 
-# Run dev server (requires correct PATH for windres)
-npm run tauri:dev
+Tauri and its plugins are gated behind the optional `tauri` feature so that `cargo test` can run without linking the Tauri runtime.
 
-# Run frontend tests
+- `cargo test` — runs Rust unit tests only (no Tauri runtime)
+- `cargo build --features tauri` — builds the Tauri binary
+- `npm run tauri:build` — production frontend + Rust + bundle
+- `npm run tauri:dev` — dev server with Tauri
+
+## Frontend Tests
+
+```bash
 npm test -- --run
-
-# Build production bundle
-npm run tauri:build
 ```
+
+## Release Artifacts
+
+After a successful `npm run tauri:build`, bundles appear in:
+
+- `src-tauri/target/release/bundle/msi/`
+- `src-tauri/target/release/bundle/nsis/`
+
+## Runtime State
+
+App state is persisted to:
+
+- Windows: `%APPDATA%/com.kimiproject.desktop/state.json`
+- macOS: `~/Library/Application Support/com.kimiproject.desktop/state.json`
+- Linux: `~/.local/share/com.kimiproject.desktop/state.json`
+
+## Known Quirks
+
+- `crate-type = ["rlib"]` is used because MinGW fails with "export ordinal too large" when building `cdylib`/`staticlib` for Tauri v2. The binary links the rlib directly via `src-tauri/src/main.rs`.
+- `cargo test` emits a `function open_kimi_in_terminal is never used` warning because `terminal.rs` is only invoked by the feature-gated `commands.rs`. This is expected.
+- The app launches `kimi` in an external terminal. If the `kimi` command is not on the user's PATH, the launch will fail and surface an error toast.
