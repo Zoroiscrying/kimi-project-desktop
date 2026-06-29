@@ -6,6 +6,7 @@ use std::thread;
 
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
+    writer: Arc<Mutex<Box<dyn Write + Send>>>,
 }
 
 pub struct PtyManager {
@@ -53,6 +54,7 @@ impl PtyManager {
 
         let mut child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
         let master = pair.master;
+        let writer = master.take_writer().map_err(|e| e.to_string())?;
         drop(pair.slave);
 
         let mut reader = master.try_clone_reader().map_err(|e| e.to_string())?;
@@ -75,10 +77,13 @@ impl PtyManager {
             sessions.lock().unwrap().remove(&session_id_for_thread);
         });
 
-        self.sessions
-            .lock()
-            .unwrap()
-            .insert(session_id, PtySession { master });
+        self.sessions.lock().unwrap().insert(
+            session_id,
+            PtySession {
+                master,
+                writer: Arc::new(Mutex::new(writer)),
+            },
+        );
 
         Ok(())
     }
@@ -88,7 +93,7 @@ impl PtyManager {
         let session = sessions
             .get(session_id)
             .ok_or_else(|| "terminal session not found".to_string())?;
-        let mut writer = session.master.take_writer().map_err(|e| e.to_string())?;
+        let mut writer = session.writer.lock().map_err(|e| e.to_string())?;
         writer
             .write_all(data.as_bytes())
             .map_err(|e| e.to_string())?;

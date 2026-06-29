@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ProjectList } from './components/ProjectList';
 import { ProjectDetail } from './components/ProjectDetail';
 import { EmptyState } from './components/EmptyState';
-import { Terminal } from './components/Terminal';
+import { Terminal, type TerminalHandle } from './components/Terminal';
+import { RightPanel } from './components/RightPanel';
+import { CommandInput } from './components/CommandInput';
 import { AddProjectDialog } from './components/AddProjectDialog';
 import { EditProjectDialog } from './components/EditProjectDialog';
 import { Toast } from './components/Toast';
@@ -26,6 +28,7 @@ function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const terminalRef = useRef<TerminalHandle>(null);
 
   useEffect(() => {
     loadState();
@@ -49,9 +52,15 @@ function App() {
     }
   };
 
+  const handleCommandSubmit = (command: string) => {
+    terminalRef.current?.sendCommand(command);
+    terminalRef.current?.focus();
+  };
+
   return (
-    <div className="flex h-screen bg-neutral-950 text-neutral-100">
-      <div className="flex w-72 flex-shrink-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-900">
+    <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-neutral-100">
+      {/* Left sidebar */}
+      <div className="flex w-64 flex-shrink-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-900">
         <div className="flex-1 overflow-hidden">
           <ProjectList
             projects={projects}
@@ -75,23 +84,46 @@ function App() {
           </button>
         </div>
       </div>
+
+      {/* Main area */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex-1 overflow-hidden">
-          {selectedProject ? (
-            <ProjectDetail
-              project={selectedProject}
-              sessions={sessions}
-              onOpenKimi={() => openKimi(selectedProject)}
-              onEdit={() => setIsEditOpen(true)}
-            />
-          ) : (
-            <EmptyState />
-          )}
+        {/* Top content: center + right panel */}
+        <div className="flex flex-1 flex-row overflow-hidden">
+          {/* Center: project detail + terminal */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex-1 overflow-hidden">
+              {selectedProject ? (
+                <ProjectDetail
+                  project={selectedProject}
+                  sessions={sessions}
+                  onOpenKimi={() => openKimi(selectedProject)}
+                  onEdit={() => setIsEditOpen(true)}
+                />
+              ) : (
+                <EmptyState />
+              )}
+            </div>
+            <div className="h-56 shrink-0">
+              <Terminal ref={terminalRef} project={selectedProject} />
+            </div>
+          </div>
+
+          {/* Right panel */}
+          <div className="w-72 flex-shrink-0 overflow-hidden">
+            <RightPanel project={selectedProject} sessions={sessions} />
+          </div>
         </div>
-        <div className="h-64 shrink-0">
-          <Terminal project={selectedProject} />
+
+        {/* Bottom command input */}
+        <div className="h-14 shrink-0">
+          <CommandInput
+            onSubmit={handleCommandSubmit}
+            disabled={!selectedProject}
+            placeholder="输入命令发送到终端..."
+          />
         </div>
       </div>
+
       <AddProjectDialog
         isOpen={isAddOpen}
         onClose={() => setIsAddOpen(false)}
