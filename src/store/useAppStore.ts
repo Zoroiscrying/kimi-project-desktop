@@ -3,6 +3,12 @@ import { invoke } from '@tauri-apps/api/core';
 import type { AppState, Project, Session } from '../types';
 import { v4 as uuidv4 } from 'uuid';
 
+function toErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return String(err);
+}
+
 interface AppStore extends AppState {
   loaded: boolean;
   error: string | null;
@@ -14,7 +20,7 @@ interface AppStore extends AppState {
   clearError: () => void;
 }
 
-export const useAppStore = create<AppStore>((set, _get) => ({
+export const useAppStore = create<AppStore>((set) => ({
   version: 1,
   projects: [],
   sessions: [],
@@ -27,7 +33,7 @@ export const useAppStore = create<AppStore>((set, _get) => ({
       const state = await invoke<AppState>('get_state');
       set({ ...state, loaded: true, error: null });
     } catch (err) {
-      set({ loaded: true, error: String(err) });
+      set({ loaded: false, error: toErrorMessage(err) });
     }
   },
 
@@ -43,7 +49,7 @@ export const useAppStore = create<AppStore>((set, _get) => ({
       const state = await invoke<AppState>('add_project', { project });
       set({ ...state, error: null });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: toErrorMessage(err) });
     }
   },
 
@@ -53,7 +59,7 @@ export const useAppStore = create<AppStore>((set, _get) => ({
       const state = await invoke<AppState>('update_project', { project: updated });
       set({ ...state, error: null });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: toErrorMessage(err) });
     }
   },
 
@@ -62,7 +68,7 @@ export const useAppStore = create<AppStore>((set, _get) => ({
       const state = await invoke<AppState>('delete_project', { id });
       set({ ...state, error: null });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: toErrorMessage(err) });
     }
   },
 
@@ -78,7 +84,7 @@ export const useAppStore = create<AppStore>((set, _get) => ({
       const state = await invoke<AppState>('record_session', { session });
       set({ ...state, error: null });
     } catch (err) {
-      set({ error: String(err) });
+      set({ error: toErrorMessage(err) });
     }
   },
 
