@@ -15,7 +15,7 @@ crate-type = ["rlib"]
 
 [features]
 default = []
-tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell", "dep:tauri-plugin-dialog", "dep:chrono", "dep:uuid"]
+tauri = ["dep:tauri", "dep:tauri-build", "dep:tauri-plugin-shell", "dep:tauri-plugin-dialog", "dep:chrono", "dep:uuid", "dep:portable-pty"]
 
 [[bin]]
 name = "kimi-project-desktop"
@@ -33,6 +33,7 @@ uuid = { version = "1", features = ["v4"], optional = true }
 tauri = { version = "2.11.3", features = [], optional = true }
 tauri-plugin-shell = { version = "2", optional = true }
 tauri-plugin-dialog = { version = "2", optional = true }
+portable-pty = { version = "0.9", optional = true }
 
 [dev-dependencies]
 tempfile = "3"

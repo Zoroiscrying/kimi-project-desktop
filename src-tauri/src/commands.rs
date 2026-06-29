@@ -2,7 +2,7 @@ use crate::state::{AppState, Project, Session};
 use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Mutex;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Emitter, Manager, State};
 
 pub struct AppStateWrapper {
     pub state: Mutex<AppState>,
@@ -83,6 +83,50 @@ pub fn record_session(
 #[tauri::command]
 pub fn open_kimi(project_path: String) -> Result<(), String> {
     crate::terminal::open_kimi_in_terminal(&project_path)
+}
+
+#[tauri::command]
+pub fn start_terminal(
+    state: State<'_, crate::pty::PtyManager>,
+    app_handle: AppHandle,
+    session_id: String,
+    cwd: String,
+) -> Result<(), String> {
+    state.start(session_id, cwd, move |data| {
+        let _ = app_handle.emit("terminal-output", TerminalOutputEvent { data });
+    })
+}
+
+#[tauri::command]
+pub fn write_terminal(
+    state: State<'_, crate::pty::PtyManager>,
+    session_id: String,
+    data: String,
+) -> Result<(), String> {
+    state.write(&session_id, &data)
+}
+
+#[tauri::command]
+pub fn resize_terminal(
+    state: State<'_, crate::pty::PtyManager>,
+    session_id: String,
+    rows: u16,
+    cols: u16,
+) -> Result<(), String> {
+    state.resize(&session_id, rows, cols)
+}
+
+#[tauri::command]
+pub fn stop_terminal(
+    state: State<'_, crate::pty::PtyManager>,
+    session_id: String,
+) -> Result<(), String> {
+    state.stop(&session_id)
+}
+
+#[derive(Clone, serde::Serialize)]
+struct TerminalOutputEvent {
+    data: String,
 }
 
 #[tauri::command]

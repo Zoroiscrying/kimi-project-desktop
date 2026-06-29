@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ProjectList } from './components/ProjectList';
 import { ProjectDetail } from './components/ProjectDetail';
 import { EmptyState } from './components/EmptyState';
+import { Terminal } from './components/Terminal';
 import { AddProjectDialog } from './components/AddProjectDialog';
 import { EditProjectDialog } from './components/EditProjectDialog';
 import { Toast } from './components/Toast';
@@ -74,17 +75,22 @@ function App() {
           </button>
         </div>
       </div>
-      <div className="flex-1 overflow-hidden">
-        {selectedProject ? (
-          <ProjectDetail
-            project={selectedProject}
-            sessions={sessions}
-            onOpenKimi={() => openKimi(selectedProject)}
-            onEdit={() => setIsEditOpen(true)}
-          />
-        ) : (
-          <EmptyState />
-        )}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="flex-1 overflow-hidden">
+          {selectedProject ? (
+            <ProjectDetail
+              project={selectedProject}
+              sessions={sessions}
+              onOpenKimi={() => openKimi(selectedProject)}
+              onEdit={() => setIsEditOpen(true)}
+            />
+          ) : (
+            <EmptyState />
+          )}
+        </div>
+        <div className="h-64 shrink-0">
+          <Terminal project={selectedProject} />
+        </div>
       </div>
       <AddProjectDialog
         isOpen={isAddOpen}

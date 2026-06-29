@@ -4,6 +4,8 @@ pub mod kimi_import;
 
 #[cfg(feature = "tauri")]
 pub mod commands;
+#[cfg(feature = "tauri")]
+pub mod pty;
 
 #[cfg(feature = "tauri")]
 use commands::AppStateWrapper;
@@ -38,6 +40,7 @@ pub fn run() {
                 state: Mutex::new(initial),
                 state_path: path,
             });
+            app.manage(pty::PtyManager::new().map_err(|e| e.to_string())?);
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
@@ -48,6 +51,10 @@ pub fn run() {
             commands::record_session,
             commands::open_kimi,
             commands::import_kimi_projects,
+            commands::start_terminal,
+            commands::write_terminal,
+            commands::resize_terminal,
+            commands::stop_terminal,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
