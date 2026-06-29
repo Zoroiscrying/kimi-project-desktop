@@ -1,7 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { ProjectList } from './components/ProjectList';
-import { ProjectDetail } from './components/ProjectDetail';
-import { EmptyState } from './components/EmptyState';
 import { Terminal, type TerminalHandle } from './components/Terminal';
 import { RightPanel } from './components/RightPanel';
 import { CommandInput } from './components/CommandInput';
@@ -36,7 +34,7 @@ function App() {
 
   if (!loaded) {
     return (
-      <div className="flex h-screen items-center justify-center bg-neutral-950 text-neutral-400">
+      <div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-neutral-400">
         Loading...
       </div>
     );
@@ -59,8 +57,8 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0a0a0a] text-neutral-100">
-      {/* Left sidebar */}
-      <div className="flex w-64 flex-shrink-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-900">
+      {/* Left sidebar: projects */}
+      <div className="flex w-60 flex-shrink-0 flex-col overflow-hidden border-r border-neutral-800 bg-neutral-900">
         <div className="flex-1 overflow-hidden">
           <ProjectList
             projects={projects}
@@ -69,10 +67,10 @@ function App() {
             onDelete={handleDelete}
           />
         </div>
-        <div className="shrink-0 space-y-2 border-t border-neutral-800 p-4">
+        <div className="shrink-0 space-y-2 border-t border-neutral-800 p-3">
           <button
             onClick={() => setIsAddOpen(true)}
-            className="w-full rounded-md bg-blue-700 py-2 text-sm font-medium text-white hover:bg-blue-600"
+            className="w-full rounded-md bg-blue-600 py-2 text-sm font-medium text-white hover:bg-blue-500"
           >
             + Add Project
           </button>
@@ -85,43 +83,28 @@ function App() {
         </div>
       </div>
 
-      {/* Main area */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* Top content: center + right panel */}
-        <div className="flex flex-1 flex-row overflow-hidden">
-          {/* Center: project detail + terminal */}
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex-1 overflow-hidden">
-              {selectedProject ? (
-                <ProjectDetail
-                  project={selectedProject}
-                  sessions={sessions}
-                  onOpenKimi={() => openKimi(selectedProject)}
-                  onEdit={() => setIsEditOpen(true)}
-                />
-              ) : (
-                <EmptyState />
-              )}
-            </div>
-            <div className="h-56 shrink-0">
-              <Terminal ref={terminalRef} project={selectedProject} />
-            </div>
-          </div>
-
-          {/* Right panel */}
-          <div className="w-72 flex-shrink-0 overflow-hidden">
-            <RightPanel project={selectedProject} sessions={sessions} />
-          </div>
+      {/* Center: full terminal */}
+      <div className="flex flex-1 flex-col overflow-hidden p-3">
+        <div className="flex-1 overflow-hidden">
+          <Terminal ref={terminalRef} project={selectedProject} />
         </div>
-
-        {/* Bottom command input */}
-        <div className="h-14 shrink-0">
+        <div className="mt-3 h-14 shrink-0">
           <CommandInput
             onSubmit={handleCommandSubmit}
             disabled={!selectedProject}
-            placeholder="输入命令发送到终端..."
+            placeholder={selectedProject ? '输入命令发送到终端...' : '先选择一个项目'}
           />
         </div>
+      </div>
+
+      {/* Right sidebar: project info & tools */}
+      <div className="w-72 flex-shrink-0 overflow-hidden border-l border-neutral-800 bg-neutral-900">
+        <RightPanel
+          project={selectedProject}
+          sessions={sessions}
+          onOpenKimi={() => selectedProject && openKimi(selectedProject)}
+          onEdit={() => setIsEditOpen(true)}
+        />
       </div>
 
       <AddProjectDialog

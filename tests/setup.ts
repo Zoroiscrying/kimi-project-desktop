@@ -30,6 +30,13 @@ vi.mock('@xterm/addon-fit', () => ({
   },
 }));
 
+vi.mock('@xterm/addon-webgl', () => ({
+  WebglAddon: class MockWebglAddon {
+    loadAddon() {}
+    dispose() {}
+  },
+}));
+
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
   value: vi.fn().mockImplementation((query: string) => ({
