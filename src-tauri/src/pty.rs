@@ -1,4 +1,4 @@
-use portable_pty::{MasterPty, NativePtySystem, PtySize, PtySystem};
+use portable_pty::{Child, MasterPty, NativePtySystem, PtySize, PtySystem};
 use std::collections::HashMap;
 use std::io::{Read, Write};
 use std::path::PathBuf;
@@ -8,6 +8,7 @@ use std::thread;
 pub struct PtySession {
     master: Box<dyn MasterPty + Send>,
     writer: Arc<Mutex<Box<dyn Write + Send>>>,
+    child: Arc<Mutex<Box<dyn Child + Send>>>,
 }
 
 pub struct PtyManager {
@@ -58,7 +59,7 @@ impl PtyManager {
         };
         cmd.cwd(&cwd);
 
-        let mut child = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
+        let child: Box<dyn Child + Send> = pair.slave.spawn_command(cmd).map_err(|e| e.to_string())?;
         let master = pair.master;
         let writer = master.take_writer().map_err(|e| e.to_string())?;
         drop(pair.slave);
@@ -79,7 +80,6 @@ impl PtyManager {
                     Err(_) => break,
                 }
             }
-            let _ = child.wait();
             sessions.lock().unwrap().remove(&session_id_for_thread);
         });
 
@@ -88,6 +88,7 @@ impl PtyManager {
             PtySession {
                 master,
                 writer: Arc::new(Mutex::new(writer)),
+                child: Arc::new(Mutex::new(child)),
             },
         );
 
@@ -133,7 +134,10 @@ impl PtyManager {
 
     pub fn stop(&self, session_id: &str) -> Result<(), String> {
         let mut sessions = self.sessions.lock().map_err(|e| e.to_string())?;
-        sessions.remove(session_id);
+        if let Some(session) = sessions.remove(session_id) {
+            let mut child = session.child.lock().map_err(|e| e.to_string())?;
+            let _ = child.kill();
+        }
         Ok(())
     }
 }
