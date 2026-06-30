@@ -128,13 +128,20 @@ export const Terminal = forwardRef<TerminalHandle, TerminalProps>(
         const sessionId = `term-${project.id}`;
         sessionIdRef.current = sessionId;
 
-        unlisten = await listen<{ data: string }>('terminal-output', (event) => {
-          if (!mounted) return;
-          if (event.payload.data && sessionIdRef.current === sessionId && terminalRef.current) {
-            terminalRef.current.write(event.payload.data);
-            onOutput?.();
+        unlisten = await listen<{ session_id: string; data: string }>(
+          'terminal-output',
+          (event) => {
+            if (!mounted) return;
+            if (
+              event.payload.session_id === sessionId &&
+              event.payload.data &&
+              terminalRef.current
+            ) {
+              terminalRef.current.write(event.payload.data);
+              onOutput?.();
+            }
           }
-        });
+        );
 
         try {
           await invoke('start_terminal', { sessionId, cwd: project.path });

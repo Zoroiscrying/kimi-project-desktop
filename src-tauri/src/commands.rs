@@ -92,8 +92,15 @@ pub fn start_terminal(
     session_id: String,
     cwd: String,
 ) -> Result<(), String> {
+    let event_session_id = session_id.clone();
     state.start(session_id, cwd, move |data| {
-        let _ = app_handle.emit("terminal-output", TerminalOutputEvent { data });
+        let _ = app_handle.emit(
+            "terminal-output",
+            TerminalOutputEvent {
+                session_id: event_session_id.clone(),
+                data,
+            },
+        );
     })
 }
 
@@ -126,6 +133,7 @@ pub fn stop_terminal(
 
 #[derive(Clone, serde::Serialize)]
 struct TerminalOutputEvent {
+    session_id: String,
     data: String,
 }
 
